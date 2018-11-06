@@ -31,6 +31,15 @@ class Kernel extends ConsoleKernel
         Commands\RegenerateAssetTags::class,
         Commands\SyncAssetCounters::class,
         Commands\RestoreDeletedUsers::class,
+        Commands\CrudApiCommand::class,
+        Commands\CrudApiControllerCommand::class,
+        Commands\CrudCommand::class,
+        Commands\CrudControllerCommand::class,
+        Commands\CrudLangCommand::class,
+        Commands\CrudMigrationCommand::class,
+        Commands\CrudModelCommand::class,
+        Commands\CrudPolicyCommand::class,
+        Commands\CrudViewCommand::class,
     ];
 
     /**
