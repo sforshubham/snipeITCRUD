@@ -1,0 +1,129 @@
+{
+  "fields": [{
+      "name": "clinic_address",
+      "type": "string"
+    },
+    {
+      "name": "clinic_contact",
+      "type": "number"
+    },
+    {
+      "name": "clinic_email",
+      "type": "email"
+    },
+    {
+      "name": "clinic_google_location",
+      "type": "text"
+    },
+    {
+      "name": "link_for_pictures",
+      "type": "text"
+    },
+    {
+      "name": "landlord_name",
+      "type": "string"
+    },
+    {
+      "name": "landlord_email",
+      "type": "email"
+    },
+    {
+      "name": "landlord_contact",
+      "type": "number"
+    },
+    {
+      "name": "monthly_rent",
+      "type": "number"
+    },
+    {
+      "name": "security_deposit",
+      "type": "number"
+    },
+    {
+      "name": "rent_escalation",
+      "type": "number"
+    },
+    {
+      "name": "lease_date",
+      "type": "date"
+    },
+    {
+      "name": "renewal_date",
+      "type": "date"
+    },
+    {
+      "name": "rent_free_start_date",
+      "type": "date"
+    },
+    {
+      "name": "rent_free_period",
+      "type": "string"
+    },
+    {
+      "name": "extension_of_rent_free_period",
+      "type": "string"
+    },
+    {
+      "name": "user_id",
+      "type": "number"
+    }
+  ],
+  "relationships": [{
+    "name": "user",
+    "type": "belongsTo",
+    "class": "App\\Models\\User"
+  }],
+  "validations": [{
+      "field": "clinic_address",
+      "rules": "required"
+    },
+    {
+      "field": "clinic_contact",
+      "rules": "required|numeric"
+    },
+    {
+      "field": "clinic_email",
+      "rules": "required|email"
+    },
+    {
+      "field": "clinic_google_location",
+      "rules": "required|url"
+    },
+    {
+      "field": "link_for_pictures",
+      "rules": "required|url"
+    },
+    {
+      "field": "landlord_name",
+      "rules": "required"
+    },
+    {
+      "field": "landlord_email",
+      "rules": "required|email"
+    },
+    {
+      "field": "landlord_contact",
+      "rules": "required|numeric"
+    },
+    {
+      "field": "monthly_rent",
+      "rules": "required|numeric"
+    },
+    {
+      "field": "security_deposit",
+      "rules": "required|numeric"
+    },
+    {
+      "field": "rent_escalation",
+      "rules": "required|numeric"
+    },
+    {
+      "field": "lease_date",
+      "rules": "required|date_format:\"Y-m-d\""
+    },
+    {
+      "field": "renewal_date",
+      "rules": "required|date_format:\"Y-m-d\""
+    }
+  ]
+}
