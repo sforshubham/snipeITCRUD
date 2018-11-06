@@ -37,6 +37,7 @@
     "watson/validating": "^3.0"
   },
     "require-dev": {
+    "appzcoder/crud-generator": "^3.0",
     "codeception/codeception": "2.3.6",
     "fzaninotto/faker": "~1.4",
     "phpunit/php-token-stream": "1.4.11",

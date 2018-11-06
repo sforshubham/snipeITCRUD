@@ -51,3 +51,5 @@ tests/_support/_generated/*
 
 *.cache
 /public/storage
+.phpintel/
+!/vendor/appzcoder/*

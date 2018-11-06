@@ -58,7 +58,10 @@ class AppServiceProvider extends ServiceProvider
         if (($this->app->environment('production'))  && (config('services.rollbar.access_token'))){
             $this->app->register(\Rollbar\Laravel\RollbarServiceProvider::class);
         }
-        
+        if ($this->app->environment('development')) {
+            $this->app->register('Appzcoder\CrudGenerator\CrudGeneratorServiceProvider');
+        }
+
         foreach ($monolog->getHandlers() as $handler) {
             $handler->setLevel($log_level);
         }
