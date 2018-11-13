@@ -18,16 +18,14 @@ class DummyClass extends Controller
     public function index(Request $request)
     {
         $this->authorize('view', {{modelName}}::class);
-        $keyword = $request->get('search');
         $perPage = {{pagination}};
+        {{filterVars}}
+        ${{crudName}} = new {{modelName}};
+        {{filterConditions}}
+        ${{crudName}} = ${{crudName}}->latest()->paginate($perPage);
 
-        if (!empty($keyword)) {
-            ${{crudName}} = {{modelName}}::{{whereSnippet}}latest()->paginate($perPage);
-        } else {
-            ${{crudName}} = {{modelName}}::latest()->paginate($perPage);
-        }
+        return view('{{viewPath}}{{viewName}}.index', compact({{compactVars}}));
 
-        return view('{{viewPath}}{{viewName}}.index', compact('{{crudName}}'));
     }
 
     /**

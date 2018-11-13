@@ -21,7 +21,8 @@ class CrudViewCommand extends Command
                             {--validations= : Validation rules for the fields.}
                             {--form-helper=html : Helper for the form.}
                             {--custom-data= : Some additional values to use in the crud.}
-                            {--localize=no : Localize the view? yes|no.}';
+                            {--localize=no : Localize the view? yes|no.}
+                            {--search : Fields to apply searching.}';
 
     /**
      * The console command description.

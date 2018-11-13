@@ -22,7 +22,8 @@ class CrudControllerCommand extends GeneratorCommand
                             {--validations= : Validation rules for the fields.}
                             {--route-group= : Prefix of the route group.}
                             {--pagination=25 : The amount of models per page for index pages.}
-                            {--force : Overwrite already existing controller.}';
+                            {--force : Overwrite already existing controller.}
+                            {--search : Fields to apply searching.}';
 
     /**
      * The console command description.
@@ -99,6 +100,7 @@ class CrudControllerCommand extends GeneratorCommand
         $viewName = snake_case($this->option('crud-name'), '-');
         $fields = $this->option('fields');
         $validations = rtrim($this->option('validations'), ';');
+        $searches = rtrim($this->option('search'), ';');
 
         $validationRules = '';
         if (trim($validations) != '') {
@@ -145,8 +147,15 @@ EOD;
         $fileSnippet = '';
         $whereSnippet = '';
 
+        $filterVars = '';
+        $filterConditions = '';
+        $textFilterExists = 0;
+        $textFilterConditions = '';
+        $compactVars = "'$crudName'";
+
         if ($fields) {
-            $x = 0;
+            $filtersArray = $this->structureFilterFields($searches);
+
             foreach ($fieldsArray as $index => $item) {
                 $itemArray = explode('#', $item);
 
@@ -155,11 +164,49 @@ EOD;
                 }
 
                 $fieldName = trim($itemArray[0]);
+                if (isset($filtersArray[$fieldName])) {
 
-                $whereSnippet .= ($index == 0) ? "where('$fieldName', 'LIKE', \"%\$keyword%\")" . "\n                " : "->orWhere('$fieldName', 'LIKE', \"%\$keyword%\")" . "\n                ";
+                    switch ($filtersArray[$fieldName]) {
+                        case 'full_text':
+                            if ($textFilterConditions == '') {
+                                $filterVars .= <<<EOD
+        \$keyword = trim(\$request->get('search'));\n
+EOD;
+                                $textFilterConditions .= "if (\$keyword != '') {\n\t\t\t";
+                                $textFilterConditions .= "\$$crudName = \$$crudName".'->where(\''.$fieldName.'\', \'like\', "%$keyword%")'."\n";
+                                $compactVars .= ", '$fieldName'";
+                            } else {
+                                $textFilterConditions .= <<<EOD
+                                ->orWhere('$fieldName', 'like', "%\$keyword%")\n
+EOD;
+                            }
+                            break;
+
+                        case 'multi_select':
+                            $filterVars .= <<<EOD
+        \$$fieldName = trim(\$request->get('$fieldName'));\n
+EOD;
+                            $filterConditions .= "\n\t\tif (\$$fieldName != '') {\n".
+                            "\t\t\t\$$crudName = \$$crudName".'->whereIn(\''.$fieldName.'\', '."$$fieldName".');'."\n".
+                            "\t\t}";
+                            $compactVars .= ", '$fieldName'";
+                            break;
+
+                        default:
+                            $filterVars .= <<<EOD
+        \$$fieldName = trim(\$request->get('$fieldName'));\n
+EOD;
+                            $filterConditions .= "\n\t\tif (\$$fieldName != '') {\n".
+                            "\t\t\t\$$crudName = \$$crudName".'->where(\''.$fieldName.'\', \'=\', '."$$fieldName".');'."\n".
+                            "\t\t}";
+                            $compactVars .= ", '$fieldName'";
+                            break;
+                    }
+                }
             }
-
-            $whereSnippet .= "->";
+            $textFilterConditions = ($textFilterConditions != '') ? trim($textFilterConditions).";\n\t\t}": '';
+            $filterVars = trim($filterVars);
+            $filterConditions = $textFilterConditions.$filterConditions;
         }
 
         return $this->replaceNamespace($stub, $name)
@@ -177,6 +224,9 @@ EOD;
             ->replacePaginationNumber($stub, $perPage)
             ->replaceFileSnippet($stub, $fileSnippet)
             ->replaceWhereSnippet($stub, $whereSnippet)
+            ->replaceFilterVars($stub, $filterVars)
+            ->replaceFilterConditions($stub, $filterConditions)
+            ->replaceCompactVars($stub, $compactVars)
             ->replaceClass($stub, $name);
     }
 
@@ -393,5 +443,75 @@ EOD;
         $stub = str_replace('{{whereSnippet}}', $whereSnippet, $stub);
 
         return $this;
+    }
+
+    /**
+     * Replace the filter conditions snippet for the given stub
+     *
+     * @param $stub
+     * @param $filterConditions
+     * @author Shubham Goel <shubham.goel@instantsys.com>
+     *
+     * @return $this
+     */
+    protected function replaceFilterConditions(&$stub, $filterConditions)
+    {
+        $stub = str_replace('{{filterConditions}}', $filterConditions, $stub);
+
+        return $this;
+    }
+
+    /**
+     * Replace the filter variables snippet for the given stub
+     *
+     * @param $stub
+     * @param $filterVars
+     * @author Shubham Goel <shubham.goel@instantsys.com>
+     *
+     * @return $this
+     */
+    protected function replaceFilterVars(&$stub, $filterVars)
+    {
+        $stub = str_replace('{{filterVars}}', $filterVars, $stub);
+
+        return $this;
+    }
+
+    /**
+     * Replace the compact variables snippet passed to view for the given stub
+     *
+     * @param $stub
+     * @param $compactVars
+     * @author Shubham Goel <shubham.goel@instantsys.com>
+     *
+     * @return $this
+     */
+    protected function replaceCompactVars(&$stub, $compactVars)
+    {
+        $stub = str_replace('{{compactVars}}', $compactVars, $stub);
+
+        return $this;
+    }
+
+    /**
+     * Structure filterable fields into "field_name:filter_type" fashion
+     *
+     * @param $filtersString
+     * @author Shubham Goel <shubham.goel@instantsys.com>
+     *
+     * @return $this
+     */
+    protected function structureFilterFields($filtersString)
+    {
+        $filtersArray = [];
+        if ($filtersString) {
+            $filtersArray = explode(';', $filtersString);
+            foreach ($filtersArray as $i => $val) {
+                list($field_name, $search_type) = explode('#', $val);
+                $filtersArray[$field_name] = $search_type;
+                unset($filtersArray[$i]);
+            }
+        }
+        return $filtersArray;
     }
 }

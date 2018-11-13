@@ -42,5 +42,10 @@
       "field": "title",
       "rules": "required|max:10"
     }
-  ]
+  ],
+  "search":{
+    "title":"full_text",
+    "category":"multi_select",
+    "content":"single_select"
+  }
 }

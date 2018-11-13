@@ -30,7 +30,8 @@ class CrudCommand extends Command
                             {--form-helper=html : Helper for generating the form.}
                             {--localize=no : Allow to localize? yes|no.}
                             {--locales=en : Locales language type.}
-                            {--soft-deletes=no : Include soft deletes fields.}';
+                            {--soft-deletes=no : Include soft deletes fields.}
+                            {--search= : Fields to apply searching.}';
 
     /**
      * The console command description.
@@ -94,6 +95,11 @@ class CrudCommand extends Command
             $validations = $this->processJSONValidations($this->option('fields_from_file'));
         }
 
+        $searches = trim($this->option('search'));
+        if ($this->option('fields_from_file')) {
+            $searches = $this->processJSONSearch($this->option('fields_from_file'));
+        }
+
         $fieldsArray = explode(';', $fields);
         $fillableArray = [];
         $migrationFields = '';
@@ -124,10 +130,10 @@ class CrudCommand extends Command
         $formHelper = $this->option('form-helper');
         $softDeletes = $this->option('soft-deletes');
 
-        $this->call('icrud:controller', ['name' => $controllerNamespace . $name . 'Controller', '--crud-name' => $name, '--model-name' => $modelName, '--model-namespace' => $modelNamespace, '--view-path' => $viewPath, '--route-group' => $routeGroup, '--pagination' => $perPage, '--fields' => $fields, '--validations' => $validations]);
+        $this->call('icrud:controller', ['name' => $controllerNamespace . $name . 'Controller', '--crud-name' => $name, '--model-name' => $modelName, '--model-namespace' => $modelNamespace, '--view-path' => $viewPath, '--route-group' => $routeGroup, '--pagination' => $perPage, '--fields' => $fields, '--validations' => $validations, '--search' => $searches]);
         $this->call('icrud:model', ['name' => $modelNamespace . $modelName, '--fillable' => $fillable, '--table' => $tableName, '--pk' => $primaryKey, '--relationships' => $relationships, '--soft-deletes' => $softDeletes]);
         $this->call('icrud:migration', ['name' => $migrationName, '--schema' => $migrationFields, '--pk' => $primaryKey, '--indexes' => $indexes, '--foreign-keys' => $foreignKeys, '--soft-deletes' => $softDeletes]);
-        $this->call('icrud:view', ['name' => $name, '--fields' => $fields, '--validations' => $validations, '--view-path' => $viewPath, '--route-group' => $routeGroup, '--localize' => $localize, '--pk' => $primaryKey, '--form-helper' => $formHelper]);
+        $this->call('icrud:view', ['name' => $name, '--fields' => $fields, '--validations' => $validations, '--view-path' => $viewPath, '--route-group' => $routeGroup, '--localize' => $localize, '--pk' => $primaryKey, '--form-helper' => $formHelper, '--search' => $searches]);
         $this->call('icrud:policy', ['name' => $modelName . 'Policy']);
 
         /**
@@ -228,11 +234,12 @@ class CrudCommand extends Command
 
         $fieldsString = '';
         foreach ($fields->fields as $field) {
+            $fieldsString .= $field->name . '#' . $field->type;
+
             if ($field->type === 'select' || $field->type === 'enum') {
-                $fieldsString .= $field->name . '#' . $field->type . '#options=' . json_encode($field->options) . ';';
-            } else {
-                $fieldsString .= $field->name . '#' . $field->type . ';';
+                $fieldsString .= '#options=' . json_encode($field->options);
             }
+            $fieldsString .= ';';
         }
 
         $fieldsString = rtrim($fieldsString, ';');
@@ -326,5 +333,32 @@ class CrudCommand extends Command
         $validationsString = rtrim($validationsString, ';');
 
         return $validationsString;
+    }
+
+    /**
+     * Process the Searchable fields.
+     *
+     * @param  string $file
+     *
+     * @author Shubham Goel
+     * @return string
+     */
+    protected function processJSONSearch($file)
+    {
+        $json = File::get($file);
+        $fields = json_decode($json);
+
+        if (!property_exists($fields, 'search')) {
+            return '';
+        }
+
+        $searchString = '';
+        foreach ($fields->search as $field => $type) {
+            $searchString .= $field . '#' . $type . ';';
+        }
+
+        $searchString = rtrim($searchString, ';');
+
+        return $searchString;
     }
 }
