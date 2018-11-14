@@ -174,7 +174,7 @@ EOD;
 EOD;
                                 $textFilterConditions .= "if (\$keyword != '') {\n\t\t\t";
                                 $textFilterConditions .= "\$$crudName = \$$crudName".'->where(\''.$fieldName.'\', \'like\', "%$keyword%")'."\n";
-                                $compactVars .= ", '$fieldName'";
+                                $compactVars .= ", 'keyword'";
                             } else {
                                 $textFilterConditions .= <<<EOD
                                 ->orWhere('$fieldName', 'like', "%\$keyword%")\n
@@ -184,9 +184,9 @@ EOD;
 
                         case 'multi_select':
                             $filterVars .= <<<EOD
-        \$$fieldName = trim(\$request->get('$fieldName'));\n
+        \$$fieldName = \$request->has('$fieldName') ? \$request->get('$fieldName') : [] ;\n
 EOD;
-                            $filterConditions .= "\n\t\tif (\$$fieldName != '') {\n".
+                            $filterConditions .= "\n\t\tif (!empty(\$$fieldName)) {\n".
                             "\t\t\t\$$crudName = \$$crudName".'->whereIn(\''.$fieldName.'\', '."$$fieldName".');'."\n".
                             "\t\t}";
                             $compactVars .= ", '$fieldName'";
