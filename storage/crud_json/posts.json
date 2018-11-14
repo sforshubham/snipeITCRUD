@@ -6,7 +6,12 @@
     },
     {
       "name": "content",
-      "type": "text"
+      "type": "select",
+      "options": {
+        "technology": "Technology",
+        "tips": "Tips",
+        "health": "Health"
+      }
     },
     {
       "name": "category",

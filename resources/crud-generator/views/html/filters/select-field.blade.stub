@@ -1,0 +1,5 @@
+<select name="%%itemName%%" class="form-control">
+    @foreach (json_decode('%%options%%', true) as $optionKey => $optionValue)
+        <option value="{{ $optionKey }}" {{ ($%%itemName%% == $optionKey) ? 'selected' : ''}}>{{ $optionValue }}</option>
+    @endforeach
+</select>

@@ -18,7 +18,7 @@ return [
     /**
      * Columns number to show in view's table.
      */
-    'view_columns_number' => 3,
+    'view_columns_number' => 10,
 
     /**
      * Delimiter for template vars
@@ -55,7 +55,7 @@ return [
     |
      */
     'dynamic_view_template' => [
-        'index' => ['formHeadingHtml', 'formBodyHtml', 'crudName', 'crudNameCap', 'modelName', 'viewName', 'routeGroup', 'primaryKey'],
+        'index' => ['dynamicFiltersForm', 'formHeadingHtml', 'formBodyHtml', 'crudName', 'crudNameCap', 'modelName', 'viewName', 'routeGroup', 'primaryKey'],
         'form' => ['formFieldsHtml'],
         'create' => ['crudName', 'crudNameCap', 'modelName', 'modelNameCap', 'viewName', 'routeGroup', 'viewTemplateDir'],
         'edit' => ['crudName', 'crudNameSingular', 'crudNameCap', 'modelNameCap', 'modelName', 'viewName', 'routeGroup', 'primaryKey', 'viewTemplateDir'],

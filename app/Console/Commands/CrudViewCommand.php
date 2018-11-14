@@ -39,6 +39,13 @@ class CrudViewCommand extends Command
     protected $viewDirectoryPath;
 
     /**
+     * View Filters Directory Path.
+     *
+     * @var string
+     */
+    protected $viewFiltersDirPath;
+
+    /**
      *  Form field types collection.
      *
      * @var array
@@ -81,6 +88,7 @@ class CrudViewCommand extends Command
      * @var array
      */
     protected $vars = [
+        'dynamicFiltersForm',
         'formFields',
         'formFieldsHtml',
         'varName',
@@ -241,6 +249,13 @@ class CrudViewCommand extends Command
     protected $delimiter;
 
     /**
+     * Dynamic Filters Html
+     *
+     * @var string
+     */
+    protected $dynamicFiltersForm = '';
+
+    /**
      * Create a new command instance.
      *
      */
@@ -269,7 +284,7 @@ class CrudViewCommand extends Command
             ? config('crudgenerator.path') . 'views/' . $formHelper . '/'
             : __DIR__ . '/../stubs/views/' . $formHelper . '/';
 
-
+        $this->viewFiltersDirPath = $this->viewDirectoryPath . 'filters' . '/';
         $this->crudName = strtolower($this->argument('name'));
         $this->varName = lcfirst($this->argument('name'));
         $this->crudNameCap = ucwords($this->crudName);
@@ -303,6 +318,7 @@ class CrudViewCommand extends Command
 
         $fields = $this->option('fields');
         $fieldsArray = explode(';', $fields);
+        $searches = rtrim($this->option('search'), ';');
 
         $this->formFields = [];
 
@@ -310,6 +326,13 @@ class CrudViewCommand extends Command
 
         if ($fields) {
             $x = 0;
+
+            $textSearch = 0;
+            $filtersFormHtml = '';
+            $filtersFieldHtml = '';
+            $hasFilters = 0;
+
+            $filterFieldsArray = $this->structureFilterFields($searches);
             foreach ($fieldsArray as $item) {
                 $itemArray = explode('#', $item);
 
@@ -327,7 +350,34 @@ class CrudViewCommand extends Command
                     $this->formFields[$x]['options'] = $options;
                 }
 
+                if (isset($filterFieldsArray[$itemArray[0]])) {
+                    switch ($filterFieldsArray[$itemArray[0]]) {
+                        case 'full_text':
+                            $textSearch = 1;
+                            break;
+
+                        case 'single_select':
+                            $selectStub = File::get($this->viewFiltersDirPath . 'select-field.blade.stub');
+                            $filtersFieldHtml .= $this->generateSelectFieldHtml($selectStub, $this->formFields[$x]);
+                            break;
+
+                        case 'multi_select':
+                            $multiSelectStub = File::get($this->viewFiltersDirPath . 'multi-select-field.blade.stub');
+                            $filtersFieldHtml .= $this->generateSelectFieldHtml($multiSelectStub, $this->formFields[$x]);
+                            break;
+                    }
+                }
+
                 $x++;
+            }
+
+            if ($textSearch == 1 || !empty($filtersFieldHtml)) {
+                $filtersFormStub = File::get($this->viewFiltersDirPath . 'filter-form.blade.stub');
+                if ($textSearch == 1) {
+                    $searchBoxHtml = File::get($this->viewFiltersDirPath . 'input-field.blade.stub');
+                    $filtersFieldHtml = $searchBoxHtml.$filtersFieldHtml;
+                }
+                $this->dynamicFiltersForm = $this->replaceDynamicFilterFields($filtersFormStub, $filtersFieldHtml);
             }
         }
 
@@ -366,7 +416,7 @@ class CrudViewCommand extends Command
     private function defaultTemplating()
     {
         return [
-            'index' => ['formHeadingHtml', 'formBodyHtml', 'crudName', 'crudNameCap', 'modelName', 'viewName', 'routeGroup', 'primaryKey'],
+            'index' => ['dynamicFiltersForm', 'formHeadingHtml', 'formBodyHtml', 'crudName', 'crudNameCap', 'modelName', 'viewName', 'routeGroup', 'primaryKey'],
             'form' => ['formFieldsHtml'],
             'create' => ['crudName', 'crudNameCap', 'modelName', 'modelNameCap', 'viewName', 'routeGroup', 'viewTemplateDir'],
             'edit' => ['crudName', 'crudNameSingular', 'crudNameCap', 'modelNameCap', 'modelName', 'viewName', 'routeGroup', 'primaryKey', 'viewTemplateDir'],
@@ -632,5 +682,66 @@ class CrudViewCommand extends Command
             $item,
             $markup
         );
+    }
+
+    /**
+     * Structure filterable fields into "field_name:filter_type" fashion
+     *
+     * @param $filtersString
+     * @author Shubham Goel <shubham.goel@instantsys.com>
+     *
+     * @return $this
+     */
+    protected function structureFilterFields($filtersString)
+    {
+        $filtersArray = [];
+        if ($filtersString) {
+            $filtersArray = explode(';', $filtersString);
+            foreach ($filtersArray as $i => $val) {
+                list($field_name, $search_type) = explode('#', $val);
+                $filtersArray[$field_name] = $search_type;
+                unset($filtersArray[$i]);
+            }
+        }
+        return $filtersArray;
+    }
+
+    /**
+     * Generate dynamic Select Field Html from stub
+     *
+     * @param $selectFieldStub
+     * @param $fieldData
+     * @author Shubham Goel <shubham.goel@instantsys.com>
+     *
+     * @return $this
+     */
+    protected function generateSelectFieldHtml($selectFieldStub, $fieldData)
+    {
+        $start = $this->delimiter[0];
+        $end = $this->delimiter[1];
+
+        $selectFieldHtml = str_replace($start . 'options' . $end, $fieldData['options'], $selectFieldStub);
+        $selectFieldHtml = str_replace($start . 'itemName' . $end, $fieldData['name'], $selectFieldHtml);
+
+        return $selectFieldHtml;
+    }
+
+    /**
+     * Replace dynamic filter Fields
+     *
+     * @param $filtersFormStub
+     * @param $filtersFieldHtml
+     * @author Shubham Goel <shubham.goel@instantsys.com>
+     *
+     * @return $this
+     */
+    protected function replaceDynamicFilterFields($filtersFormStub, $filtersFieldHtml)
+    {
+        $start = $this->delimiter[0];
+        $end = $this->delimiter[1];
+
+        $filtersFormHtml = str_replace($start . 'dynamicFilterFields' . $end, $filtersFieldHtml, $filtersFormStub);
+
+        return $filtersFormHtml;
     }
 }
