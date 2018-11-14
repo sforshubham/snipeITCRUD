@@ -1,4 +1,5 @@
 <select multiple="multiple" name="%%itemName%%[]" class="form-control">
+		<option value="">-- Select -- </option>
     @foreach (json_decode('%%options%%', true) as $optionKey => $optionValue)
         <option value="{{ $optionKey }}" {{ in_array($optionKey, $%%itemName%%) ? 'selected' : ''}}>{{ $optionValue }}</option>
     @endforeach
