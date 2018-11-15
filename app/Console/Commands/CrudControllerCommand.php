@@ -184,7 +184,7 @@ EOD;
 
                         case 'multi_select':
                             $filterVars .= <<<EOD
-        \$$fieldName = \$request->has('$fieldName') ? \$request->get('$fieldName') : [] ;\n
+        \$$fieldName = \$request->has('$fieldName') ? array_filter(\$request->get('$fieldName'), 'strlen') : [] ;\n
 EOD;
                             $filterConditions .= "\n\t\tif (!empty(\$$fieldName)) {\n".
                             "\t\t\t\$$crudName = \$$crudName".'->whereIn(\''.$fieldName.'\', '."$$fieldName".');'."\n".
